@@ -21,14 +21,31 @@ body {
 }
 
 .app-header {
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
 }
 
 h1 {
   color: white;
-  font-size: 2rem;
-  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.wallet-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.wallet-button:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .swap-container {
