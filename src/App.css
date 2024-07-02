@@ -34,18 +34,18 @@ h1 {
 }
 
 .wallet-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: white;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: background 0.3s ease;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: none !important;
+  color: white !important;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.9rem !important;
+  border-radius: 20px !important;
+  cursor: pointer !important;
+  transition: background 0.3s ease !important;
 }
 
 .wallet-button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.2) !important;
 }
 
 .swap-container {
@@ -109,6 +109,32 @@ select {
 .swap-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.custom-token {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.custom-token input {
+  flex-grow: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.custom-token button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.custom-token button:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 @media (max-width: 480px) {
