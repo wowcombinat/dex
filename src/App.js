@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
-import { Api } from '@jup-ag/api';
+import { Jupiter } from '@jup-ag/core';
 import './App.css';
 
 // Расширенный список токенов (50 популярных токенов на Solana)
@@ -29,26 +29,40 @@ function App() {
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [customToken, setCustomToken] = useState('');
-
-  const jupiterApi = new Api();
+  const [jupiter, setJupiter] = useState(null);
 
   useEffect(() => {
-    if (amount && fromToken && toToken) {
+    const initJupiter = async () => {
+      const jupiterInstance = await Jupiter.load({
+        connection,
+        cluster: 'mainnet-beta',
+        userPublicKey: publicKey,
+      });
+      setJupiter(jupiterInstance);
+    };
+
+    if (connected && publicKey) {
+      initJupiter();
+    }
+  }, [connection, publicKey, connected]);
+
+  useEffect(() => {
+    if (amount && fromToken && toToken && jupiter) {
       fetchRoutes();
     }
-  }, [amount, fromToken, toToken]);
+  }, [amount, fromToken, toToken, jupiter]);
 
   const fetchRoutes = async () => {
     setLoading(true);
     try {
-      const computedRoutes = await jupiterApi.quoteGet({
-        inputMint: fromToken.address,
-        outputMint: toToken.address,
+      const computedRoutes = await jupiter.computeRoutes({
+        inputMint: new PublicKey(fromToken.address),
+        outputMint: new PublicKey(toToken.address),
         amount: parseFloat(amount) * (10 ** 9), // assuming 9 decimals
         slippageBps: 50,
       });
 
-      setRoutes(computedRoutes.data);
+      setRoutes(computedRoutes.routesInfos);
     } catch (error) {
       console.error('Error fetching routes:', error);
     }
@@ -56,16 +70,17 @@ function App() {
   };
 
   const handleSwap = async () => {
-    if (!publicKey || !signTransaction || routes.length === 0) return;
+    if (!publicKey || !signTransaction || routes.length === 0 || !jupiter) return;
 
     try {
-      const swapResult = await jupiterApi.swapPost({
-        userPublicKey: publicKey.toBase58(),
-        route: routes[0],
+      const { execute } = await jupiter.exchange({
+        routeInfo: routes[0],
       });
 
-      if (swapResult.data.txid) {
-        console.log('Swap executed successfully. Transaction ID:', swapResult.data.txid);
+      const swapResult = await execute();
+
+      if ('txid' in swapResult) {
+        console.log('Swap executed successfully. Transaction ID:', swapResult.txid);
       }
     } catch (error) {
       console.error('Swap failed:', error);
