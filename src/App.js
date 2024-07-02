@@ -53,16 +53,17 @@ function App() {
   }, [amount, fromToken, toToken, jupiter]);
 
   const fetchRoutes = async () => {
+    if (!jupiter) return;
     setLoading(true);
     try {
-      const computedRoutes = await jupiter.computeRoutes({
+      const routesResponse = await jupiter.computeRoutes({
         inputMint: new PublicKey(fromToken.address),
         outputMint: new PublicKey(toToken.address),
         amount: parseFloat(amount) * (10 ** 9), // assuming 9 decimals
         slippageBps: 50,
       });
 
-      setRoutes(computedRoutes.routesInfos);
+      setRoutes(routesResponse.routesInfos);
     } catch (error) {
       console.error('Error fetching routes:', error);
     }
