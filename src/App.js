@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
-import { JupiterProvider, useJupiter } from '@jup-ag/react-hook';
+import { Jupiter } from '@jup-ag/api';
 import './App.css';
 
 // Расширенный список токенов (50 популярных токенов на Solana)
@@ -20,28 +20,63 @@ const tokenList = [
   // Добавьте еще 40 токенов здесь
 ];
 
-function SwapComponent() {
-  const { connected, publicKey } = useWallet();
+function App() {
+  const { publicKey, signTransaction, connected } = useWallet();
+  const { connection } = useConnection();
   const [fromToken, setFromToken] = useState(tokenList[0]);
   const [toToken, setToToken] = useState(tokenList[1]);
   const [amount, setAmount] = useState('');
-  const [slippage, setSlippage] = useState(1);
+  const [routes, setRoutes] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [customToken, setCustomToken] = useState('');
 
-  const { exchange, routes, loading, error } = useJupiter({
-    amount: parseFloat(amount) * (10 ** 9), // assuming 9 decimals
-    inputMint: new PublicKey(fromToken.address),
-    outputMint: new PublicKey(toToken.address),
-    slippage,
-    debounceTime: 250,
-  });
+  useEffect(() => {
+    if (amount && fromToken && toToken) {
+      fetchRoutes();
+    }
+  }, [amount, fromToken, toToken]);
+
+  const fetchRoutes = async () => {
+    setLoading(true);
+    try {
+      const jupiter = await Jupiter.load({
+        connection,
+        cluster: 'mainnet-beta',
+        user: publicKey,
+      });
+
+      const computedRoutes = await jupiter.computeRoutes({
+        inputMint: new PublicKey(fromToken.address),
+        outputMint: new PublicKey(toToken.address),
+        amount: parseFloat(amount) * (10 ** 9), // assuming 9 decimals
+        slippageBps: 50,
+      });
+
+      setRoutes(computedRoutes.routesInfos);
+    } catch (error) {
+      console.error('Error fetching routes:', error);
+    }
+    setLoading(false);
+  };
 
   const handleSwap = async () => {
-    if (!connected || !publicKey || !routes) return;
+    if (!publicKey || !signTransaction || routes.length === 0) return;
 
     try {
-      const { txid } = await exchange();
-      console.log('Swap executed successfully. Transaction ID:', txid);
+      const jupiter = await Jupiter.load({
+        connection,
+        cluster: 'mainnet-beta',
+        user: publicKey,
+      });
+
+      const { execute } = await jupiter.exchange({
+        routeInfo: routes[0],
+      });
+
+      const swapResult = await execute();
+      if ('txid' in swapResult) {
+        console.log('Swap executed successfully. Transaction ID:', swapResult.txid);
+      }
     } catch (error) {
       console.error('Swap failed:', error);
     }
@@ -57,73 +92,58 @@ function SwapComponent() {
   };
 
   return (
-    <div className="swap-container">
-      <div className="input-container">
-        <input 
-          type="number" 
-          value={amount} 
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="Amount"
-        />
-        <select 
-          value={fromToken.symbol} 
-          onChange={(e) => setFromToken(tokenList.find(t => t.symbol === e.target.value))}
-        >
-          {tokenList.map(token => (
-            <option key={token.address} value={token.symbol}>{token.symbol}</option>
-          ))}
-        </select>
-      </div>
-      <button className="swap-button" onClick={() => {
-        const temp = fromToken;
-        setFromToken(toToken);
-        setToToken(temp);
-      }}>↑↓</button>
-      <div className="input-container">
-        <input type="text" value={routes && routes[0] ? routes[0].outAmount : ''} readOnly />
-        <select 
-          value={toToken.symbol} 
-          onChange={(e) => setToToken(tokenList.find(t => t.symbol === e.target.value))}
-        >
-          {tokenList.map(token => (
-            <option key={token.address} value={token.symbol}>{token.symbol}</option>
-          ))}
-        </select>
-      </div>
-      <button className="swap-button main" onClick={handleSwap} disabled={!connected || loading}>
-        {loading ? 'Loading...' : 'Swap'}
-      </button>
-      <div className="custom-token">
-        <input 
-          type="text" 
-          value={customToken} 
-          onChange={(e) => setCustomToken(e.target.value)}
-          placeholder="Custom token address"
-        />
-        <button onClick={addCustomToken}>Add Token</button>
-      </div>
-      {error && <div className="error">{error.toString()}</div>}
+    <div className="app">
+      <header className="app-header">
+        <h1>Solana DEX Swap</h1>
+        <WalletMultiButton className="wallet-button" />
+      </header>
+      <main className="swap-container">
+        <div className="input-container">
+          <input 
+            type="number" 
+            value={amount} 
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Amount"
+          />
+          <select 
+            value={fromToken.symbol} 
+            onChange={(e) => setFromToken(tokenList.find(t => t.symbol === e.target.value))}
+          >
+            {tokenList.map(token => (
+              <option key={token.address} value={token.symbol}>{token.symbol}</option>
+            ))}
+          </select>
+        </div>
+        <button className="swap-button" onClick={() => {
+          const temp = fromToken;
+          setFromToken(toToken);
+          setToToken(temp);
+        }}>↑↓</button>
+        <div className="input-container">
+          <input type="text" value={routes[0] ? routes[0].outAmount / (10 ** 9) : ''} readOnly />
+          <select 
+            value={toToken.symbol} 
+            onChange={(e) => setToToken(tokenList.find(t => t.symbol === e.target.value))}
+          >
+            {tokenList.map(token => (
+              <option key={token.address} value={token.symbol}>{token.symbol}</option>
+            ))}
+          </select>
+        </div>
+        <button className="swap-button main" onClick={handleSwap} disabled={!connected || loading}>
+          {loading ? 'Loading...' : 'Swap'}
+        </button>
+        <div className="custom-token">
+          <input 
+            type="text" 
+            value={customToken} 
+            onChange={(e) => setCustomToken(e.target.value)}
+            placeholder="Custom token address"
+          />
+          <button onClick={addCustomToken}>Add Token</button>
+        </div>
+      </main>
     </div>
-  );
-}
-
-function App() {
-  const { connection } = useConnection();
-
-  return (
-    <JupiterProvider
-      connection={connection}
-      cluster="mainnet-beta"
-      userPublicKey={null}
-    >
-      <div className="app">
-        <header className="app-header">
-          <h1>Solana DEX Swap</h1>
-          <WalletMultiButton className="wallet-button" />
-        </header>
-        <SwapComponent />
-      </div>
-    </JupiterProvider>
   );
 }
 
