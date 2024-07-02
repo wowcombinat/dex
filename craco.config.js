@@ -13,7 +13,8 @@ module.exports = {
         "url": require.resolve("url"),
         "assert": require.resolve("assert"),
         "zlib": require.resolve("browserify-zlib"),
-        "path": require.resolve("path-browserify")
+        "path": require.resolve("path-browserify"),
+        "vm": require.resolve("vm-browserify")
       };
       
       webpackConfig.plugins.push(
