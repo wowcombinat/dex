@@ -5,7 +5,6 @@
   "dependencies": {
     "@craco/craco": "^7.1.0",
     "@project-serum/anchor": "^0.26.0",
-    "@project-serum/serum": "^0.13.65",
     "@solana/wallet-adapter-react": "^0.15.32",
     "@solana/wallet-adapter-react-ui": "^0.9.31",
     "@solana/wallet-adapter-wallets": "^0.19.16",
@@ -25,7 +24,7 @@
     "path-browserify": "^1.0.1",
     "browserify-zlib": "^0.2.0",
     "vm-browserify": "^1.1.2",
-    "@jup-ag/api": "^6.0.0"
+    "@jup-ag/core": "^4.0.0-beta.17"
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.0"
