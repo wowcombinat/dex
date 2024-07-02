@@ -24,14 +24,15 @@
     "assert": "^2.0.0",
     "path-browserify": "^1.0.1",
     "browserify-zlib": "^0.2.0",
-    "vm-browserify": "^1.1.2"
+    "vm-browserify": "^1.1.2",
+    "@jup-ag/core": "^4.0.0-beta.17"
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.0"
   },
   "scripts": {
     "start": "craco start",
-    "build": "CI=false craco build",
+    "build": "npm install && CI=false craco build",
     "test": "craco test",
     "eject": "react-scripts eject"
   },
